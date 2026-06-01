@@ -16,11 +16,8 @@ When a new article drops, the script parses the unstructured text, separates the
 **🚀 Deployment Setup**
 
 Create a new project at script.google.com.
-
 Copy the contents of checkOfficialPSPlusFeed.js into your project.
-
 Replace "YOUR_DISCORD_WEBHOOK_URL_HERE" on line 19 with your actual Discord Webhook URL.
-
 Go to the Triggers menu (the alarm clock icon) and set a Time-Driven trigger to run the checkOfficialPSPlusFeed function hourly.
 
 **🤝 Contributing**
