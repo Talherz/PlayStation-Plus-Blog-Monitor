@@ -16,7 +16,7 @@ function checkOfficialPSPlusFeed() {
 
   try {
     // === 1. CONFIGURATION ===
-    const webhookUrl = "YOUR_DISCORD_WEBHOOK_HERE"; // PASTE YOUR WEBHOOK URL HERE
+    const webhookUrl = "YOUR_DISCORD_WEBHOOK_URL_HERE"; // PASTE YOUR WEBHOOK URL HERE
     
     // CACHE BUSTING: Forces Google to fetch a fresh feed every single time
     const cacheBuster = new Date().getTime();
