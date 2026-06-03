@@ -60,7 +60,7 @@ async function checkOfficialPSPlusFeed() {
 
     for (let i = 0; i < posts.length; i++) {
       const post = posts[i];
-      const titleLower = post.title.toLowerCase();
+      const titleLower = String(post.title).toLowerCase();
       const postId = post.guid;
       
       // Essential Games
@@ -94,7 +94,7 @@ async function checkOfficialPSPlusFeed() {
       fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
       console.log("Memory state updated.");
     } else {
-      console.log("No new posts detected. State unchanged.");
+      console.log("No new posts detected or updates required. State unchanged.");
     }
 
   } catch (error) {
@@ -106,7 +106,7 @@ async function checkOfficialPSPlusFeed() {
 function extractGameList(htmlBlock, fallbackTitle = "") {
   let extractedGames = [];
   
-  let decodedHtml = htmlBlock
+  let decodedHtml = String(htmlBlock)
     .replace(/&#8211;/g, '-')  
     .replace(/&#8212;/g, '-')  
     .replace(/&#8217;/g, "'")  
@@ -140,7 +140,7 @@ function extractGameList(htmlBlock, fallbackTitle = "") {
       let rawText = match[1].replace(/<[^>]*>?/gm, '').trim();
       let gameString = isolateGameString(rawText);
       
-      if (gameString.length > 2 && gameString.length < 80 && !gameString.toLowerCase().includes("last chance") && !extractedGames.includes(gameString)) {
+      if (gameString.length > 2 && gameString.length < 80 && !String(gameString).toLowerCase().includes("last chance") && !extractedGames.includes(gameString)) {
         extractedGames.push(gameString);
       }
     }
@@ -216,21 +216,29 @@ async function processBlogContent(post, type) {
   messageContent += "\n\u200B";
 
   let imageUrl = "";
-  const imgMatch = post.content.match(/src="(https:\/\/[^"]+\.(jpg|png|jpeg))"/i);
+  // Added support for WebP and Query parameters in the image link
+  const imgMatch = post.content.match(/src="(https:\/\/[^"]+\.(?:jpg|png|jpeg|webp)[^"]*)"/i);
   if (imgMatch) imageUrl = imgMatch[1];
+
+  // Base Embed (WITHOUT image)
+  const embedData = {
+    "title": post.title,
+    "url": post.link,
+    "description": tierText,
+    "color": embedColor,
+    "footer": { "text": "Official PlayStation Blog Auto-Parse" },
+    "timestamp": new Date().toISOString()
+  };
+
+  // Only attach the image block if we actually successfully scraped a URL
+  if (imageUrl) {
+    embedData.image = { "url": imageUrl };
+  }
 
   const payload = {
     "username": "Talherz Waifu",
     "content": messageContent, 
-    "embeds": [{
-      "title": post.title,
-      "url": post.link,
-      "description": tierText,
-      "image": { "url": imageUrl },
-      "color": embedColor,
-      "footer": { "text": "Official PlayStation Blog Auto-Parse" },
-      "timestamp": new Date().toISOString()
-    }]
+    "embeds": [embedData]
   };
   
   console.log(`Attempting to send alert to Discord for: ${post.title}`);
@@ -243,22 +251,25 @@ async function processBlogContent(post, type) {
     });
 
     if (res.ok) {
-      console.log("SUCCESS! Discord accepted the message.");
+      console.log("✅ SUCCESS! Discord accepted the message.");
       return true;
     }
 
     if (res.status === 429) {
       const retryAfter = Number(res.headers.get("Retry-After") || 2);
       if (retryAfter > 250) {
-        console.error(`Discord rate limit is too long (${retryAfter}s). Aborting attempt.`);
+        console.error(`❌ Discord rate limit is too long (${retryAfter}s). Aborting attempt.`);
         return false;
       }
-      console.warn(`Rate limited. Retry after ${retryAfter}s (attempt ${attempt}/3)`);
+      console.warn(`⚠️ Rate limited. Retry after ${retryAfter}s (attempt ${attempt}/3)`);
       await sleep(retryAfter * 1000);
       continue;
     }
 
-    console.error(`DISCORD REJECTED IT! Error code: ${res.status}`);
+    // Capture exact Discord error
+    const errorText = await res.text();
+    console.error(`❌ DISCORD REJECTED IT! Error code: ${res.status}`);
+    console.error(`Reason: ${errorText}`);
     return false;
   }
   
