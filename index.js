@@ -165,7 +165,16 @@ function formatListText(gameArray) {
   if (gameArray.length === 0) return "> *None detected or formatting changed.*\n";
   let listText = "";
   for (let i = 0; i < gameArray.length; i++) {
-    listText += (i + 1) + ". **" + gameArray[i] + "**\n";
+    let gameStr = gameArray[i];
+    // Split the game string if it contains a pipe to separate the title from the console tags
+    if (gameStr.includes("|")) {
+      let splitIndex = gameStr.indexOf("|");
+      let title = gameStr.substring(0, splitIndex).trim();
+      let consoles = gameStr.substring(splitIndex).trim();
+      listText += (i + 1) + ". **" + title + "** " + consoles + "\n";
+    } else {
+      listText += (i + 1) + ". **" + gameStr + "**\n";
+    }
   }
   return listText;
 }
@@ -213,14 +222,10 @@ async function processBlogContent(post, type) {
     tierText = "Click the blog link for full details.";
   }
 
-  messageContent += "\n\u200B";
-
   let imageUrl = "";
-  // Added support for WebP and Query parameters in the image link
   const imgMatch = post.content.match(/src="(https:\/\/[^"]+\.(?:jpg|png|jpeg|webp)[^"]*)"/i);
   if (imgMatch) imageUrl = imgMatch[1];
 
-  // Base Embed (WITHOUT image)
   const embedData = {
     "title": post.title,
     "url": post.link,
@@ -230,7 +235,6 @@ async function processBlogContent(post, type) {
     "timestamp": new Date().toISOString()
   };
 
-  // Only attach the image block if we actually successfully scraped a URL
   if (imageUrl) {
     embedData.image = { "url": imageUrl };
   }
@@ -266,7 +270,6 @@ async function processBlogContent(post, type) {
       continue;
     }
 
-    // Capture exact Discord error
     const errorText = await res.text();
     console.error(`❌ DISCORD REJECTED IT! Error code: ${res.status}`);
     console.error(`Reason: ${errorText}`);
