@@ -1,25 +1,34 @@
-# PlayStation-Plus-Blog-Monitor
+# 🌟 PS Plus Arrivals Tracker
 
-**📖 Overview**
+An automated, serverless Node.js bot that natively parses the Official PlayStation Blog RSS feed to detect new "Monthly Essential" and "Game Catalog" announcements, extracts the specific games using regex strategies, and delivers formatted lists directly to a Discord server.
 
-A lightweight, robust Google Apps Script that automatically monitors the official PlayStation Blog for new PS Plus Game Catalog and Monthly Games announcements.
-When a new article drops, the script parses the unstructured text, separates the games by their respective tiers (Essential, Extra, Premium), and delivers a cleanly formatted alert directly to your Discord server via Webhook.
+Built securely on **GitHub Actions**, this script utilizes GitHub Secrets for environment variables and relies on an internal JSON state tracker to ensure announcements are only posted once. 
 
-**✨ Features**
+## ✨ Features
+* **Native RSS Parsing:** Uses `fast-xml-parser` to read the official PlayStation feed instantly.
+* **Smart HTML Extraction:** Employs a multi-tiered regex algorithm (Pipe markers -> Bullet point checks -> Title fallback) to accurately scrape game names out of unstructured blog paragraphs.
+* **Tier Sorting:** Automatically isolates and categorizes "Extra" vs "Premium" tier additions.
+* **Rate Limit Protection:** Features an automated sleep-and-retry loop to handle Discord API 429 rate limit rejections gracefully.
+* **Secure Architecture:** Uses GitHub Secrets to inject Webhook URLs at runtime, keeping all server credentials entirely hidden from the codebase.
 
-- Native XML Parsing: Reads the raw RSS XML directly from PlayStation's servers, avoiding third-party proxy rate limits.
-- Cache Busting: Uses timestamp parameters to force Google's execution servers to fetch live data instead of stale, cached versions.
-- Dynamic Data Extraction: Employs multi-strategy text isolation to dynamically separate game lists, ensuring the script keeps working even when PR formatting changes from bullet points to raw text.
-- Discord Rate Limit Handling: Includes a built-in retry loop that intercepts Discord 429 rate limits, forcing the script to sleep and retry, or gracefully aborting if the timeout exceeds Google's system limits.
-- Concurrency Locks: Uses LockService to prevent overlapping cloud executions from causing duplicate webhook deliveries.
+## 🚀 How to Setup Your Own Tracker
 
-**🚀 Deployment Setup**
+1. **Fork the Repository:** Click "Fork" at the top right to copy this project.
+2. **Create a Discord Webhook:**
+   * Go to your Discord Server Settings > Integrations > Webhooks.
+   * Create a new Webhook and copy the URL.
+3. **Configure GitHub Secrets:**
+   * In your forked repository, go to **Settings** > **Secrets and variables** > **Actions**.
+   * Add a new repository secret named `DISCORD_WEBHOOK_URL` and paste your URL.
+4. **Enable Actions:**
+   * Go to the **Actions** tab.
+   * Enable the workflows and manually trigger the "PS Plus Arrivals Tracker" to run your first check!
 
-- Create a new project at script.google.com.
-- Copy the contents of checkOfficialPSPlusFeed.js into your project.
-- Replace "YOUR_DISCORD_WEBHOOK_URL_HERE" on line 19 with your actual Discord Webhook URL.
-- Go to the Triggers menu (the alarm clock icon) and set a Time-Driven trigger to run the checkOfficialPSPlusFeed function hourly.
+## 🛠️ Built With
+* **Node.js 24** - Runtime environment
+* **fast-xml-parser** - XML feed extraction
+* **GitHub Actions** - CI/CD pipeline and automated hourly chron job
 
-**🤝 Contributing**
+## 📝 License
 
-Contributions, issues, and feature requests are welcome! If you have ideas for improving the text extraction logic or adding support for different regions, feel free to open an issue or submit a pull request.
+Distributed under the MIT License. See `LICENSE` for more information.
