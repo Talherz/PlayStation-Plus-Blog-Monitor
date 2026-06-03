@@ -24,6 +24,18 @@ Built securely on **GitHub Actions**, this script utilizes GitHub Secrets for en
    * Go to the **Actions** tab.
    * Enable the workflows and manually trigger the "PS Plus Arrivals Tracker" to run your first check!
 
+### 🔄 How to Force a Re-Post (Resetting Memory)
+This bot uses the `saved_state.json` file as its memory to prevent spamming your Discord server with duplicate alerts. If you ever need to force the bot to re-post the latest announcements (for example, if you are testing a new channel or accidentally deleted a message), you just need to wipe its memory:
+
+1. Open `saved_state.json` in your repository and click the edit (pencil) icon.
+2. Clear out the saved links so the file looks exactly like this:
+   ```json
+   {
+     "LAST_ESSENTIAL_ID": "",
+     "LAST_CATALOG_ID": ""
+   }
+3. Commit the change, head over to the Actions tab, and manually run the workflow again!
+
 ## 🛠️ Built With
 * **Node.js 24** - Runtime environment
 * **fast-xml-parser** - XML feed extraction
