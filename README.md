@@ -1,4 +1,4 @@
-# 🌟 PS Plus Arrivals Tracker
+# 🌟 PS Plus Game Arrivals Tracker
 
 An automated, serverless Node.js bot that natively parses the Official PlayStation Blog RSS feed to detect new "Monthly Essential" and "Game Catalog" announcements, extracts the specific games using regex strategies, and delivers formatted lists directly to a Discord server.
 
