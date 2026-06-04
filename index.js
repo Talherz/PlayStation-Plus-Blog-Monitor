@@ -1,12 +1,6 @@
 const fs = require('fs');
 const { XMLParser } = require('fast-xml-parser');
 
-const WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
-
-if (!WEBHOOK_URL) {
-  console.error("FATAL ERROR: No Discord Webhook URL provided in environment variables.");
-  process.exit(1);
-}
 
 const STATE_FILE = 'saved_state.json';
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -31,7 +25,13 @@ async function checkOfficialPSPlusFeed() {
     });
     
     const xmlDoc = parser.parse(xmlData);
-    const items = xmlDoc.rss.channel.item;
+    const items = xmlDoc?.rss?.channel?.item;
+
+    if (!items) {
+      console.warn("Aborting: RSS feed is missing expected items structure.");
+      return;
+    }
+
     const itemList = Array.isArray(items) ? items : [items];
     
     let posts = [];
@@ -99,7 +99,7 @@ async function checkOfficialPSPlusFeed() {
 
   } catch (error) {
     console.error("Execution error: ", error);
-    process.exit(1);
+
   }
 }
 
@@ -248,7 +248,7 @@ async function processBlogContent(post, type) {
   console.log(`Attempting to send alert to Discord for: ${post.title}`);
   
   for (let attempt = 1; attempt <= 3; attempt++) {
-    const res = await fetch(WEBHOOK_URL, {
+    const res = await fetch(process.env.DISCORD_WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -279,4 +279,17 @@ async function processBlogContent(post, type) {
   return false;
 }
 
-checkOfficialPSPlusFeed();
+if (require.main === module) {
+  if (!process.env.DISCORD_WEBHOOK_URL) {
+    console.error("FATAL ERROR: No Discord Webhook URL provided in environment variables.");
+    process.exit(1);
+  }
+  checkOfficialPSPlusFeed();
+}
+
+module.exports = {
+  checkOfficialPSPlusFeed,
+  extractGameList,
+  formatListText,
+  processBlogContent
+};
