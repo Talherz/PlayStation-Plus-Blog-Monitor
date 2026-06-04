@@ -3,7 +3,7 @@ const { XMLParser } = require('fast-xml-parser');
 
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 
-if (!WEBHOOK_URL) {
+if (require.main === module && !WEBHOOK_URL) {
   console.error("FATAL ERROR: No Discord Webhook URL provided in environment variables.");
   process.exit(1);
 }
@@ -31,7 +31,13 @@ async function checkOfficialPSPlusFeed() {
     });
     
     const xmlDoc = parser.parse(xmlData);
-    const items = xmlDoc.rss.channel.item;
+    const items = xmlDoc?.rss?.channel?.item;
+
+    if (!items) {
+      console.warn("Aborting: RSS feed is missing expected items structure.");
+      return;
+    }
+
     const itemList = Array.isArray(items) ? items : [items];
     
     let posts = [];
@@ -50,10 +56,8 @@ async function checkOfficialPSPlusFeed() {
 
     // Load Memory State
     let state = { LAST_ESSENTIAL_ID: "", LAST_CATALOG_ID: "" };
-    try {
-      state = JSON.parse(await fs.promises.readFile(STATE_FILE, 'utf8'));
-    } catch (err) {
-      if (err.code !== 'ENOENT') throw err;
+    if (fs.existsSync(STATE_FILE)) {
+      state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
     }
 
     let foundEssential = false;
@@ -93,7 +97,7 @@ async function checkOfficialPSPlusFeed() {
     }
 
     if (stateChanged) {
-      await fs.promises.writeFile(STATE_FILE, JSON.stringify(state, null, 2));
+      fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
       console.log("Memory state updated.");
     } else {
       console.log("No new posts detected or updates required. State unchanged.");
@@ -106,7 +110,7 @@ async function checkOfficialPSPlusFeed() {
 }
 
 function extractGameList(htmlBlock, fallbackTitle = "") {
-  let extractedGames = [];
+  let extractedGamesSet = new Set();
   
   let decodedHtml = String(htmlBlock)
     .replace(/&#8211;/g, '-')  
@@ -129,38 +133,38 @@ function extractGameList(htmlBlock, fallbackTitle = "") {
     let line = lines[i].trim();
     if (line.includes("| PS") || line.includes("|PS")) {
       let gameString = isolateGameString(line);
-      if (gameString.length > 2 && !extractedGames.includes(gameString)) {
-        extractedGames.push(gameString);
+      if (gameString.length > 2 && !extractedGamesSet.has(gameString)) {
+        extractedGamesSet.add(gameString);
       }
     }
   }
 
-  if (extractedGames.length === 0) {
+  if (extractedGamesSet.size === 0) {
     const listRegex = /<li>(.*?)<\/li>/g;
     let match;
     while ((match = listRegex.exec(decodedHtml)) !== null) {
       let rawText = match[1].replace(/<[^>]*>?/gm, '').trim();
       let gameString = isolateGameString(rawText);
       
-      if (gameString.length > 2 && gameString.length < 80 && !String(gameString).toLowerCase().includes("last chance") && !extractedGames.includes(gameString)) {
-        extractedGames.push(gameString);
+      if (gameString.length > 2 && gameString.length < 80 && !String(gameString).toLowerCase().includes("last chance") && !extractedGamesSet.has(gameString)) {
+        extractedGamesSet.add(gameString);
       }
     }
   }
 
-  if (extractedGames.length === 0 && fallbackTitle.includes(":")) {
+  if (extractedGamesSet.size === 0 && fallbackTitle.includes(":")) {
     let cleanTitle = fallbackTitle.replace(/&#8211;/g, '-').replace(/&#8217;/g, "'").replace(/&amp;/g, '&');
     let titleString = cleanTitle.split(":")[1].replace(/and more/i, "").trim();
     let rawGames = titleString.split(/,(?![^()]*\))|\s+and\s+/i);
     for (let i = 0; i < rawGames.length; i++) {
       let gameName = rawGames[i].trim();
-      if (gameName.length > 2 && !extractedGames.includes(gameName)) {
-        extractedGames.push(gameName);
+      if (gameName.length > 2 && !extractedGamesSet.has(gameName)) {
+        extractedGamesSet.add(gameName);
       }
     }
   }
 
-  return extractedGames;
+  return Array.from(extractedGamesSet);
 }
 
 function formatListText(gameArray) {
@@ -173,9 +177,9 @@ function formatListText(gameArray) {
       let splitIndex = gameStr.indexOf("|");
       let title = gameStr.substring(0, splitIndex).trim();
       let consoles = gameStr.substring(splitIndex).trim();
-      listText += (i + 1) + ". **" + title + "** " + consoles + "\n";
+      listText += `${i + 1}. **${title}** ${consoles}\n`;
     } else {
-      listText += (i + 1) + ". **" + gameStr + "**\n";
+      listText += `${i + 1}. **${gameStr}**\n`;
     }
   }
   return listText;
@@ -281,4 +285,10 @@ async function processBlogContent(post, type) {
   return false;
 }
 
-checkOfficialPSPlusFeed();
+if (require.main === module) {
+  checkOfficialPSPlusFeed();
+}
+
+module.exports = {
+  formatListText
+};
