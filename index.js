@@ -170,8 +170,7 @@ function extractGameList(htmlBlock, fallbackTitle = "") {
 function formatListText(gameArray) {
   if (gameArray.length === 0) return "> *None detected or formatting changed.*\n";
   let listText = "";
-  for (let i = 0; i < gameArray.length; i++) {
-    let gameStr = gameArray[i];
+  for (const [i, gameStr] of gameArray.entries()) {
     // Split the game string if it contains a pipe to separate the title from the console tags
     if (gameStr.includes("|")) {
       let splitIndex = gameStr.indexOf("|");
