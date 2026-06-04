@@ -50,8 +50,10 @@ async function checkOfficialPSPlusFeed() {
 
     // Load Memory State
     let state = { LAST_ESSENTIAL_ID: "", LAST_CATALOG_ID: "" };
-    if (fs.existsSync(STATE_FILE)) {
-      state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+    try {
+      state = JSON.parse(await fs.promises.readFile(STATE_FILE, 'utf8'));
+    } catch (err) {
+      if (err.code !== 'ENOENT') throw err;
     }
 
     let foundEssential = false;
@@ -91,7 +93,7 @@ async function checkOfficialPSPlusFeed() {
     }
 
     if (stateChanged) {
-      fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
+      await fs.promises.writeFile(STATE_FILE, JSON.stringify(state, null, 2));
       console.log("Memory state updated.");
     } else {
       console.log("No new posts detected or updates required. State unchanged.");
