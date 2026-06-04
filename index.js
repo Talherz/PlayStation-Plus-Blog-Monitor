@@ -177,9 +177,9 @@ function formatListText(gameArray) {
       let splitIndex = gameStr.indexOf("|");
       let title = gameStr.substring(0, splitIndex).trim();
       let consoles = gameStr.substring(splitIndex).trim();
-      listText += (i + 1) + ". **" + title + "** " + consoles + "\n";
+      listText += `${i + 1}. **${title}** ${consoles}\n`;
     } else {
-      listText += (i + 1) + ". **" + gameStr + "**\n";
+      listText += `${i + 1}. **${gameStr}**\n`;
     }
   }
   return listText;
